@@ -47,7 +47,15 @@ public class ClienteBiblioteca {
                             String input = scanner.nextLine();
                             try {
                                 numeroDeExemplares = Integer.parseInt(input);
-                                break;
+                                if(numeroDeExemplares < 0) {
+                                    System.out.println("Por favor, digite apenas um número inteiro.");
+
+                                }
+                                if(numeroDeExemplares >= 0) {
+                                    break;
+
+                                }
+
                             } catch (NumberFormatException e) {
                                 System.out.println("Por favor, digite apenas um número inteiro.");
                             }
