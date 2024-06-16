@@ -1,20 +1,23 @@
 package example;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 public class ServidorBiblioteca {
     private static final int PORT = 12345;
     private static final String FILE_PATH = "src/main/resources/livros.json";
     private List<Livro> livros;
+    private int currentId;
 
     public ServidorBiblioteca() {
         this.livros = carregarLivros();
+        this.currentId = determinarProximoId();
     }
 
     private List<Livro> carregarLivros() {
@@ -34,54 +37,60 @@ public class ServidorBiblioteca {
         }
     }
 
-    private void listarLivros(PrintWriter out) {
+    private int determinarProximoId() {
+        int maxId = 0;
         for (Livro livro : livros) {
-            out.println(livro.getNome() + " - " + livro.getAutor() + " - " + livro.getGenero() + " - " + livro.getNumeroDeExemplares() + " exemplares - " + livro.getNumeroDeAlugados() + " alugados");
+            int id = Integer.parseInt(livro.getId());
+            if (id > maxId) {
+                maxId = id;
+            }
         }
-        out.println("FIM");
+        return maxId + 1;
     }
 
-    private void cadastrarLivro(String autor, String nome, String genero, int numeroDeExemplares) {
-        livros.add(new Livro(autor, nome, genero, numeroDeExemplares));
+    private synchronized void cadastrarLivro(String autor, String nome, String genero, int numeroDeExemplares) {
+        String id = String.valueOf(currentId++);
+        Livro novoLivro = new Livro(id, autor, nome, genero, numeroDeExemplares);
+        livros.add(novoLivro);
         salvarLivros();
     }
 
-    private void alugarLivro(String nome, PrintWriter out) {
-        for (Livro livro : livros) {
-            if (livro.getNome().equalsIgnoreCase(nome)) {
-                if (livro.getNumeroDeExemplares() > 0) {
-                    livro.setNumeroDeExemplares(livro.getNumeroDeExemplares() - 1);
-                    livro.setNumeroDeAlugados(livro.getNumeroDeAlugados() + 1);
-                    salvarLivros();
-                    out.println("Livro alugado com sucesso.");
-                } else {
-                    out.println("Livro não disponível para aluguel.");
-                }
-                out.println("FIM");
-                return;
+    private synchronized void alugarLivro(String id, PrintWriter out) {
+        Livro livro = encontrarLivroPorId(id);
+        if (livro != null) {
+            if (livro.getNumeroDeExemplares() > 0) {
+                livro.setNumeroDeExemplares(livro.getNumeroDeExemplares() - 1);
+                livro.setNumeroDeAlugados(livro.getNumeroDeAlugados() + 1);
+                salvarLivros();
+                out.println("Livro " + livro.getNome() + " alugado com sucesso.");
+            } else {
+                out.println("Livro não disponível para aluguel.");
             }
+        } else {
+            out.println("Livro não encontrado.");
         }
-        out.println("Livro não encontrado.");
         out.println("FIM");
     }
 
-    private void devolverLivro(String nome, PrintWriter out) {
-        for (Livro livro : livros) {
-            if (livro.getNome().equalsIgnoreCase(nome)) {
-                if (livro.getNumeroDeAlugados() > 0) {
-                    livro.setNumeroDeExemplares(livro.getNumeroDeExemplares() + 1);
-                    livro.setNumeroDeAlugados(livro.getNumeroDeAlugados() - 1);
-                    salvarLivros();
-                    out.println("Livro devolvido com sucesso.");
-                } else {
-                    out.println("Livro não está alugado.");
-                }
-                out.println("FIM");
-                return;
+    private synchronized void devolverLivro(String id, PrintWriter out) {
+        Livro livro = encontrarLivroPorId(id);
+        if (livro != null) {
+            if (livro.getNumeroDeAlugados() > 0) {
+                livro.setNumeroDeExemplares(livro.getNumeroDeExemplares() + 1);
+                livro.setNumeroDeAlugados(livro.getNumeroDeAlugados() - 1);
+                salvarLivros();
+                out.println("Livro " + livro.getNome() + " devolvido com sucesso.");
+            } else {
+                out.println("Livro não está alugado.");
             }
+        } else {
+            out.println("Livro não encontrado.");
         }
-        out.println("Livro não encontrado.");
         out.println("FIM");
+    }
+
+    private Livro encontrarLivroPorId(String id) {
+        return livros.stream().filter(livro -> livro.getId().equals(id)).findFirst().orElse(null);
     }
 
     public void iniciar() {
@@ -136,7 +145,7 @@ public class ServidorBiblioteca {
                             if (parts.length == 2) {
                                 alugarLivro(parts[1], out);
                             } else {
-                                out.println("Nome do livro não informado.");
+                                out.println("ID do livro não informado.");
                                 out.println("FIM");
                             }
                             break;
@@ -144,7 +153,7 @@ public class ServidorBiblioteca {
                             if (parts.length == 2) {
                                 devolverLivro(parts[1], out);
                             } else {
-                                out.println("Nome do livro não informado.");
+                                out.println("ID do livro não informado.");
                                 out.println("FIM");
                             }
                             break;
@@ -158,6 +167,13 @@ public class ServidorBiblioteca {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void listarLivros(PrintWriter out) {
+        for (Livro livro : livros) {
+            out.println(livro.getId() + " - " + livro.getNome() + " - " + livro.getAutor() + " - " + livro.getGenero() + " - " + livro.getNumeroDeExemplares() + " exemplares - " + livro.getNumeroDeAlugados() + " alugados");
+        }
+        out.println("FIM");
     }
 
     public static void main(String[] args) {

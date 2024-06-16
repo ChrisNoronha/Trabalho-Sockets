@@ -3,18 +3,28 @@ package example;
 import java.io.Serializable;
 
 public class Livro implements Serializable {
+    private String id;
     private String autor;
     private String nome;
     private String genero;
     private int numeroDeExemplares;
     private int numeroDeAlugados;
 
-    public Livro(String autor, String nome, String genero, int numeroDeExemplares) {
+    public Livro(String id, String autor, String nome, String genero, int numeroDeExemplares) {
+        this.id = id;
         this.autor = autor;
         this.nome = nome;
         this.genero = genero;
         this.numeroDeExemplares = numeroDeExemplares;
-        this.numeroDeAlugados = 0; // Inicializa como 0
+        this.numeroDeAlugados = 0;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getAutor() {
