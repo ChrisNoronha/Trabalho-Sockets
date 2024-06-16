@@ -1,7 +1,7 @@
 
 # Trabalho-Sockets
 
-Este repositório contém o projeto para o trabalho em grupo do segundo bimestre de programação.
+Este repositório contém o projeto para o trabalho em grupo do segundo bimestre de programação. O código implementa um sistema distribuído simples onde clientes podem se conectar a um servidor para realizar operações básicas de gerenciamento de biblioteca como listar, cadastrar, alugar e devolver livros. Usa comunicação por sockets TCP/IP e serialização de objetos em JSON para persistência de dados dos livros.
 
 ## Estrutura do Projeto
 
